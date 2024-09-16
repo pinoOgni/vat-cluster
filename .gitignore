@@ -1,0 +1,11 @@
+.vagrant/
+playbooks/host_vars/
+*.log
+Vagrantfile
+playbooks/inventory.ini
+terraform/.terraform*
+.vscode
+terraform/**/.terraform/
+terraform/**/.terraform/terraform.tfstate
+terraform/**/.terraform/terraform.lock.hcl
+
