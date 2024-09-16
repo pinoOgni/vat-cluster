@@ -21,7 +21,7 @@ To run all playbooks at once:
 ```
 ansible-playbook playbooks/all_in_one_playbook.yml --ask-become
 ```
-Otherwise just select the playbook you want or comment on the one you do not want to run.
+Otherwise just select the playbook you want or comment on the one you do not want to run from the `playbooks/all_in_one_playbook.yml` file.
 
 ### Terraform
 
@@ -42,12 +42,13 @@ Once you have obtained all the VMs go to the `terraform` directory. The followin
 
 #### Notes about kube-bench
 
-There are 2 way to deploy kube-bench. The first one is using the `kubernetes_job` resource and the second one is using the `null_resource` resource. 
-Basically using the `kubernetes_job` resource you may get this error `Error: job: kiratech-test/kube-bench is not in complete state` that typically means that the Kubernetes job didn't finish successfully or is still running when Terraform expects it to be complete. By using the `null_resource` resource it simply deploy the job. 
+I wrote 2 files to deploy kube-bench. The first one is using `kubernetes_job` resource and the second one is using `null_resource` resource. 
+
+Basically using the `kubernetes_job` resource you may get this error `Error: job: kiratech-test/kube-bench is not in complete state` that typically means that the Kubernetes job didn't finish successfully or is still running when Terraform expects it to be complete. By using the `null_resource` resource it simply deploy the job and I wrote it just to not have an error. 
 
 #### Example
 Note the `0/1 Completed` for the kube-bench pod.
- 
+
 ![alt text](images/pods.png)
 
 
