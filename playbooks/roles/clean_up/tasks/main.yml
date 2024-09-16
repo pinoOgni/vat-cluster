@@ -1,0 +1,72 @@
+---
+- name: Find and save in a local variable all host_vars files
+  ansible.builtin.find:
+    paths: ./host_vars
+    patterns: "*.yml"
+  register: files_to_delete
+
+- name: Delete all the host_vars files
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  with_items: "{{ files_to_delete.files }}"
+
+- name: Get IP addresses for the master/manager node
+  ansible.builtin.shell: "VBoxManage guestproperty get {{ manager_prefix }}{{ item.0 }} \"/VirtualBox/GuestInfo/Net/1/V4/IP\" | sed -e 's/Value: //g'"
+  register: manager_ip
+  with_sequence: start=1 end="{{ managers }}"
+  changed_when: false  # Prevents reporting changes on read-only operations
+
+- name: Save manager nodes IP in managers_ips
+  ansible.builtin.set_fact:
+    managers_ips: "{{ managers_ips + [item.stdout_lines[0]] }}"
+  loop: "{{ manager_ip.results }}"
+
+- name: Remove ssh configuration for the manager node
+  community.general.ssh_config:
+    remote_user: "{{ user }}"
+    host: "{{ manager_prefix }}{{ my_idx | int + 1 }}"
+    hostname: "{{ item }}"
+    identity_file: "{{ prv_key_path }}"
+    ssh_config_file: "{{ ansible_user_dir }}/.ssh/config"
+    forward_agent: true
+    strict_host_key_checking: "no"
+    user_known_hosts_file: /dev/null
+    state: absent
+  loop: "{{ managers_ips }}"
+  loop_control:
+    index_var: my_idx
+
+- name: Get IP addresses for the worker nodes
+  ansible.builtin.shell: "VBoxManage guestproperty get {{ worker_prefix }}{{ item.0 }} \"/VirtualBox/GuestInfo/Net/1/V4/IP\" | sed -e 's/Value: //g'"
+  register: worker_ips
+  with_sequence: start=1 end="{{ workers }}"
+  changed_when: false  # Prevents reporting changes on read-only operations
+
+- name: Save worker nodes IPs in workers_ips
+  ansible.builtin.set_fact:
+    workers_ips: "{{ workers_ips + [item.stdout_lines[0]] }}"
+  loop: "{{ worker_ips.results }}"
+
+- name: Remove ssh configuration for the worker nodes
+  community.general.ssh_config:
+    remote_user: "{{ user }}"
+    host: "{{ worker_prefix }}{{ my_idx | int + 1 }}"
+    hostname: "{{ item }}"
+    identity_file: "{{ prv_key_path }}"
+    ssh_config_file: "{{ ansible_user_dir }}/.ssh/config"
+    forward_agent: true
+    strict_host_key_checking: "no"
+    user_known_hosts_file: /dev/null
+    state: absent
+  loop: "{{ workers_ips }}"
+  loop_control:
+    index_var: my_idx
+
+- name: Remove all vagrant machines
+  ansible.builtin.command: vagrant destroy -f
+
+- name: Remove local kubeconfig
+  ansible.builtin.file:
+    path: "~/.kube/config"
+    state: absent

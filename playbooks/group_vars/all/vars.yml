@@ -1,0 +1,92 @@
+# These variables are shared among all roles
+
+# Kubernetes versions (kubeadm, kubelet, kubectl)
+k8s_version: 1.29
+
+# kubernetesVersion for kubeadm configuration
+kubernetes_version: 1.29.0
+
+apt_packages:
+- apt-transport-https
+- ca-certificates
+- curl
+- gpg
+- software-properties-common
+- socat
+
+containerd_dependencies:
+- unzip
+- tar
+- apt-transport-https
+- libseccomp2
+- util-linux
+
+containerd_version: 1.7.0
+
+# Time in seconds to wait for the hosts to be available after the virtual machines are newly created
+time_out: 300
+
+# pod-network-cidr used in k8s
+pod_network_cidr: 172.22.0.0/16
+
+# service-cidr used in k8s
+service_cidr: 10.16.0.0/12
+
+# user to be added to the k8s group
+user: vagrant
+
+# zone to which set the time
+time_zone: Europe/Rome
+
+# Nodes Configuration
+# These variables are automatically set by the bootstrap role.
+managers_ips: []
+workers_ips: []
+
+# Number of manager nodes. It must be 1. This project does not support more manager/master nodes
+managers: 1
+# Number of worker nodes, >= 1
+workers: 1
+
+# These prefixes are used when generating the names of the nodes.
+# Used in the host_vars files, inventory.ini and in /etc/hosts in the local system.
+manager_prefix: manager-
+
+worker_prefix: worker-
+
+# Vagrant file configuration
+
+# Flavor of the operating system to be used in the VMs
+# image_name: "ubuntu/focal64"
+# image_name: "ubuntu/groovy64"
+image_name: "ubuntu/bionic64"
+# image_name: "ubuntu/jammy64"
+# image_name: "ubuntu/xenial64"
+
+# The NIC on your host to which the VM interface will be bridged.
+bridge_nic: wlp5s0
+
+# Path to the generated SSH private key file
+ssh_key_path: ~/.ssh
+ssh_key_name: vagrant_machines
+
+# Path to the private key
+prv_key_path: "{{ ssh_key_path }}/{{ ssh_key_name }}"
+
+# Path to the public key used to ssh to the machines, if this key does not exist then a new one is generated with the same name
+pub_key_path: "{{ ssh_key_path }}/{{ ssh_key_name }}.pub"
+
+# Amount of RAM memory for a single VM
+manager_virtual_memory_size: 4096
+worker_virtual_memory_size: 4096
+
+# Amount of Virtual CPUs for a single VM
+manager_virtual_cpus: 4
+worker_virtual_cpus: 4
+
+# Choose the name for your cluster
+cluster_name: clusterino # clusterino means small cluster in Italian
+
+
+# CNI calico configuration
+calico_version: 3.25.0

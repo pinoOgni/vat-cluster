@@ -1,0 +1,8 @@
+# It is use to create the kubeadm terraform file (also it could be used to do terraform init and apply)
+---
+- name: Kubernetes Terraform Playbook
+  hosts: localhost
+  become: false
+  roles:
+   - k8s_terraform
+   

@@ -1,0 +1,27 @@
+# AUTO-GENERATED FILE FROM ANSIBLE
+apiVersion: kubeadm.k8s.io/v1beta3
+kind: ClusterConfiguration
+networking:
+  serviceSubnet: {{ service_cidr }}
+  podSubnet: {{ pod_network_cidr }}
+  dnsDomain: "cluster.local"
+kubernetesVersion: {{ kubernetes_version }}
+# Uncomment the controlPlaneEndpoint if using HA with a load balancer or VIP:
+# this project does not support HA
+# controlPlaneEndpoint: "10.100.0.1:6443"
+clusterName: {{ cluster_name }}
+---
+kind: KubeletConfiguration
+apiVersion: kubelet.config.k8s.io/v1beta1
+cgroupDriver: systemd
+#serverTLSBootstrap: true
+---
+apiVersion: kubeadm.k8s.io/v1beta3
+kind: InitConfiguration
+nodeRegistration:
+  criSocket: unix:///run/containerd/containerd.sock
+  kubeletExtraArgs:
+    node-ip: {{ node_ip }}
+localAPIEndpoint:
+  advertiseAddress: "{{ node_ip }}"
+  bindPort: 6443

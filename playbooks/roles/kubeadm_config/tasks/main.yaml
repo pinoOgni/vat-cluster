@@ -1,0 +1,18 @@
+---
+- name: "Template the kubeadm config file in manager node"
+  ansible.builtin.template:
+    src: "init-config.yaml.j2"
+    dest: "/home/{{ user }}/init-config.yaml"
+    owner: "{{ user }}"
+    group: "{{ user }}"
+    mode: '0755'
+  when: "'managers' in group_names"
+
+- name: "Template the kubeadm config file in worker nodes"
+  ansible.builtin.template:
+    src: "join-config.yaml.j2"
+    dest: "/home/{{ user }}/join-config.yaml"
+    owner: "{{ user }}"
+    group: "{{ user }}"
+    mode: '0755'
+  when: "'workers' in group_names"

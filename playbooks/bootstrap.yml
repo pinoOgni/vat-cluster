@@ -1,0 +1,7 @@
+---
+# It is used to create the Vagrantfile and to create the Vms
+- name: Bootstrap Playbook
+  hosts: localhost
+  become: false
+  roles:
+   - bootstrap

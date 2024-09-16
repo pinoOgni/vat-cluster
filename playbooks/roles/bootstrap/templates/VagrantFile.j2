@@ -1,0 +1,50 @@
+# AUTO-GENERATED FILE FROM ANSIBLE
+IMAGE_NAME = "{{ image_name }}"
+BRIDGE_NIC = "{{ bridge_nic }}"
+
+Vagrant.configure("2") do |config|
+    config.ssh.insert_key = true
+    config.disksize.size = '50GB'
+
+{% for i in range(managers) %}
+    config.vm.define "{{ manager_prefix }}{{ loop.index }}" do |manager|
+        manager.vm.provider :virtualbox do |vb|
+            vb.memory = {{ manager_virtual_memory_size }}
+            vb.cpus = {{ manager_virtual_cpus }}
+            vb.name = "{{ manager_prefix }}{{ loop.index }}"
+        end
+        manager.vm.box = IMAGE_NAME
+        # change the bridge interface to match the one on your host machine
+        manager.vm.network "public_network", bridge: BRIDGE_NIC
+        manager.vm.hostname = "manager"
+        manager.vm.provision "ansible" do |ansible|
+            # Configures the ssh-key
+            ansible.playbook = "playbooks/vagrant_ssh_key.yml"
+             ansible.extra_vars = {
+                pub_key_path: "{{ pub_key_path }}"
+            }
+        end
+    end
+{% endfor %}
+
+{% for i in range(workers) %}
+    config.vm.define "{{ worker_prefix }}{{ loop.index }}" do |wk|
+        wk.vm.provider :virtualbox do |vb|
+            vb.memory = {{ worker_virtual_memory_size }}
+            vb.cpus = {{ worker_virtual_cpus }}
+            vb.name = "{{ worker_prefix }}{{ loop.index }}"
+        end
+        wk.vm.box = IMAGE_NAME
+        # change the bridge interface to match the one on your host machine
+        wk.vm.network "public_network", bridge: BRIDGE_NIC
+        wk.vm.hostname = "worker-{{ loop.index }}"
+        wk.vm.provision "ansible" do |ansible|
+            # Configures the ssh-key
+            ansible.playbook = "playbooks/vagrant_ssh_key.yml"
+            ansible.extra_vars = {
+                pub_key_path: "{{ pub_key_path }}"
+            }
+        end
+    end
+{% endfor %}
+end

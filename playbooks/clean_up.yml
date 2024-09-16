@@ -1,0 +1,7 @@
+---
+- name: Clean Up Playbook
+  hosts: localhost
+  become: false
+  roles:
+   - clean_up
+  

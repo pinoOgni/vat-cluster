@@ -1,0 +1,12 @@
+---
+# All in one playbook to run a once the whole configuration.
+- name: All in one Playbook
+  hosts: localhost
+#- name: Import bootstrap playbook
+#  import_playbook: bootstrap.yml  # It is used to create the Vagrantfile and to create the Vms
+#- name: Import base setup playbook
+#  import_playbook: base_setup.yml # It is used to install all packages
+- name: Import kubeadm config playbook
+  import_playbook: kubeadm_config.yml # It is used to create the init and join configuration and copy on the correct nodes
+- name: Import k8s terraform playbook
+  import_playbook: k8s_terraform.yml # It is use to create the kubeadm terraform file (also it could be used to do terraform init and apply)

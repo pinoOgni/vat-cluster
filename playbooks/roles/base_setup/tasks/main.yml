@@ -1,0 +1,219 @@
+# Tis role installs all the packages needed by the nodes
+- name: Wait for target connection to become reachable/usable. Seconds {{ time_out }}
+  ansible.builtin.wait_for_connection:
+    delay: 10
+    timeout: "{{ time_out }}"
+
+- name: Collecting various facts after the connection is reachable
+  ansible.builtin.setup:
+
+# Ensure that no automatic updates are triggered while the system time is being manipulate
+- name: Disable timers for unattended upgrade
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    enabled: false
+    state: stopped
+  loop:
+    - 'apt-daily.timer'
+    - 'apt-daily-upgrade.timer'
+
+- name: Reload systemctl daemon to apply the new changes
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Update apt package index
+  ansible.builtin.apt:
+    update_cache: true
+
+- name: Install needed apt packages
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ apt_packages }}"
+
+- name: Install needed containerd dependencies
+  ansible.builtin.apt:
+    name: "{{ containerd_dependencies }}"
+    state: present
+
+- name: Ensure the directory for apt keys exists
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+
+- name: Download Kubernetes APT key using curl
+  ansible.builtin.shell: |
+    curl -fsSL https://pkgs.k8s.io/core:/stable:/v{{ k8s_version }}/deb/Release.key -o /tmp/Release.key
+  args:
+    executable: /bin/bash
+
+
+- name: Add Kubernetes APT key to keyring
+  ansible.builtin.command: >
+    gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg /tmp/Release.key
+  args:
+    creates: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+- name: Clean up temporary key file
+  ansible.builtin.file:
+    path: /tmp/Release.key
+    state: absent
+
+- name: Add Kubernetes apt repository for v{{ k8s_version }}
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v{{ k8s_version }}/deb/ /"
+    filename: kubernetes
+    state: present
+
+- name: Update apt package index after adding Kubernetes repository
+  ansible.builtin.apt:
+    update_cache: true
+
+- name: Install kubeadm, kubelet, and kubectl
+  ansible.builtin.apt:
+    name:
+      - kubelet
+      - kubeadm
+      - kubectl
+    state: present
+
+- name: Hold kubelet, kubeadm, and kubectl packages to prevent upgrades
+  ansible.builtin.command:
+    cmd: apt-mark hold kubelet kubeadm kubectl
+
+- name: Enable and start the kubelet service
+  ansible.builtin.systemd:
+    name: kubelet
+    enabled: true
+    state: started
+
+- name: Check if containerd binary is already installed
+  ansible.builtin.stat:
+    path: /usr/local/bin/containerd
+  register: containerd_installed
+
+# It can give some problems with slow internet connection
+# - name: Download containerd archive if not present
+#   ansible.builtin.get_url:
+#     url: "https://github.com/containerd/containerd/releases/download/v{{ containerd_version }}/containerd-{{ containerd_version }}-linux-amd64.tar.gz"
+#     dest: "/usr/local/containerd-{{ containerd_version }}-linux-amd64.tar.gz"
+#   when: not containerd_installed.stat.exists
+
+# Alternative to ansible.builtin.get_url
+- name: Download containerd using wget
+  ansible.builtin.shell: |
+    wget -O /usr/local/containerd-{{ containerd_version }}-linux-amd64.tar.gz https://github.com/containerd/containerd/releases/download/v{{ containerd_version }}/containerd-{{ containerd_version }}-linux-amd64.tar.gz
+  args:
+    creates: "/usr/local/containerd-{{ containerd_version }}-linux-amd64.tar.gz"
+  become: true
+  when: not containerd_installed.stat.exists
+
+- name: Extract containerd archive to /usr/local if not already installed
+  ansible.builtin.unarchive:
+    src: "/usr/local/containerd-{{ containerd_version }}-linux-amd64.tar.gz"
+    dest: "/usr/local/bin"
+    remote_src: true
+    extra_opts: ["--strip-components=1"]
+  when: not containerd_installed.stat.exists
+
+# It can give some problems with slow internet connection
+# - name: Download runc binary
+#   ansible.builtin.get_url:
+#     url: "https://github.com/opencontainers/runc/releases/download/v1.1.4/runc.amd64"
+#     dest: "/usr/local/sbin/runc"
+#     mode: '0755'
+
+# Alternative to ansible.builtin.get_url
+- name: Download runc using wget
+  ansible.builtin.shell: |
+    wget -O /usr/local/sbin/runc https://github.com/opencontainers/runc/releases/download/v1.1.4/runc.amd64
+  args:
+    creates: "/usr/local/sbin/runc"
+  become: true
+
+# this task goes with the previous one
+- name: Set execute permissions on runc
+  ansible.builtin.file:
+    path: /usr/local/sbin/runc
+    mode: '0755'
+  become: true
+
+- name: Create /etc/containerd directory
+  ansible.builtin.file:
+    path: /etc/containerd
+    state: directory
+    mode: '0755' 
+
+- name: Generate default containerd config
+  ansible.builtin.command: containerd config default
+  register: containerd_default_config
+
+- name: Save default containerd config
+  ansible.builtin.copy:
+    content: "{{ containerd_default_config.stdout }}"
+    dest: /etc/containerd/config.toml
+    mode: '0644'
+
+- name: Update containerd config to use systemd cgroup
+  ansible.builtin.lineinfile:
+    path: /etc/containerd/config.toml
+    regexp: 'SystemdCgroup = false'
+    line: 'SystemdCgroup = true'
+
+- name: Download containerd systemd service file
+  ansible.builtin.get_url:
+    url: "https://raw.githubusercontent.com/containerd/containerd/main/containerd.service"
+    dest: /etc/systemd/system/containerd.service
+    mode: '0644'
+
+- name: Reload systemd daemon
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Enable and start containerd service
+  ansible.builtin.systemd:
+    name: containerd
+    enabled: true
+    state: started
+
+- name: Remove swapfile from /etc/fstab
+  ansible.builtin.file:
+    path: /etc/fstab
+    state: absent
+    # Ensure the swap entry is not present
+    mode: '0644'
+
+- name: Disable swap
+  ansible.builtin.sysctl:
+    name: vm.swappiness
+    value: 0
+    state: present
+  when: ansible_swaptotal_mb > 0
+
+- name: Enable br_netfilter module
+  community.general.modprobe:
+    name: br_netfilter
+    state: present
+
+- name: Set up required sysctl params for Kubernetes networking
+  ansible.posix.sysctl:
+    name: "{{ item.key }}"
+    value: "{{ item.value }}"
+    state: present
+    sysctl_set: true
+  loop:
+    - { key: 'net.bridge.bridge-nf-call-ip6tables', value: '1' }
+    - { key: 'net.bridge.bridge-nf-call-iptables', value: '1' }
+    - { key: 'net.ipv4.ip_forward', value: '1' }
+
+- name: Ensure netfilter module is loaded at boot
+  ansible.builtin.copy:
+    dest: /etc/modules-load.d/k8s.conf
+    content: |
+      br_netfilter
+      overlay
+
+- name: Reload systemd to apply changes
+  ansible.builtin.systemd:
+    daemon_reload: true

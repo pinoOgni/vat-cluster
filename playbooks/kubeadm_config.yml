@@ -1,0 +1,9 @@
+# It is used to create the init and join configuration and copy on the correct nodes
+---
+- name: Kubeadm Configuration Playbook
+  hosts: all
+  gather_facts: false
+  remote_user: "{{ user }}"
+  become: true
+  roles:
+    - kubeadm_config

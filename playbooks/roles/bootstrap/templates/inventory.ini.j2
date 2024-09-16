@@ -1,0 +1,21 @@
+# AUTO-GENERATED FILE FROM ANSIBLE
+[managers]
+{% for node_ip in managers_ips %}
+{{ manager_prefix }}{{ loop.index }} ansible_host={{ node_ip }}
+{% endfor %}
+
+[workers]
+{% for node_ip in workers_ips %}
+{{ worker_prefix }}{{ loop.index }} ansible_host={{ node_ip }}
+{% endfor %}
+
+[managers:vars]
+ansible_ssh_private_key_file={{ prv_key_path }}
+
+[workers:vars]
+ansible_ssh_private_key_file={{ prv_key_path }}
+
+## All nodes
+[all_nodes:children]
+managers
+workers

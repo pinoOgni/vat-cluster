@@ -1,0 +1,9 @@
+- name: Generate Terraform configuration
+  ansible.builtin.template:
+    src: kubeadm.tf.j2
+    dest: ../terraform/k8s-creation/kubeadm.tf
+  vars:
+    prv_key_path: "{{ hostvars[groups['managers'][0]].ansible_ssh_private_key_file }}"
+    manager_ips: "{{ groups['managers'] | map('extract', hostvars, 'ansible_host') | list }}"
+    worker_ips: "{{ groups['workers'] | map('extract', hostvars, 'ansible_host') | list }}"
+  delegate_to: localhost

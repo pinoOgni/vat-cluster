@@ -1,0 +1,10 @@
+# AUTO-GENERATED FILE FROM ANSIBLE
+apiVersion: kubeadm.k8s.io/v1beta3
+kind: JoinConfiguration
+nodeRegistration:
+  criSocket: unix:///run/containerd/containerd.sock
+  kubeletExtraArgs:
+    node-ip: {{ node_ip }}
+discovery:
+  file:
+    kubeConfigPath: "/home/{{ user }}/.kube/config"
