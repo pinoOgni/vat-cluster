@@ -5,7 +5,9 @@ Vagrantfile
 playbooks/inventory.ini
 terraform/.terraform*
 .vscode
-terraform/**/.terraform/
-terraform/**/.terraform/terraform.tfstate
-terraform/**/.terraform/terraform.lock.hcl
+terraform/**/.terraform
+terraform/**/.terraform.lock.hcl
+terraform/**/terraform.tfstate
+terraform/**/terraform.tfstate.*
+terraform/k8s-creation/kubeadm.tf
 
