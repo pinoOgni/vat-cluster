@@ -2,6 +2,7 @@
   ansible.builtin.template:
     src: kubeadm.tf.j2
     dest: ../terraform/k8s-creation/kubeadm.tf
+    mode: '0644'
   vars:
     prv_key_path: "{{ hostvars[groups['managers'][0]].ansible_ssh_private_key_file }}"
     manager_ips: "{{ groups['managers'] | map('extract', hostvars, 'ansible_host') | list }}"

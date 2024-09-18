@@ -143,7 +143,7 @@
   ansible.builtin.file:
     path: /etc/containerd
     state: directory
-    mode: '0755' 
+    mode: '0755'
 
 - name: Generate default containerd config
   ansible.builtin.command: containerd config default
@@ -213,6 +213,7 @@
     content: |
       br_netfilter
       overlay
+    mode: '0644'
 
 - name: Reload systemd to apply changes
   ansible.builtin.systemd:

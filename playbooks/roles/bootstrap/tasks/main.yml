@@ -2,6 +2,7 @@
   ansible.builtin.template:
     src: VagrantFile.j2
     dest: ../Vagrantfile
+    mode: '0644'
   delegate_to: localhost
 
 - name: Check if the ~/.ssh directory exists, if not create it
@@ -86,6 +87,7 @@
   ansible.builtin.template:
     src: inventory.ini.j2
     dest: inventory.ini
+    mode: '0644'
   delegate_to: localhost
 
 - name: Refresh inventory to ensure that the new generated one is used
