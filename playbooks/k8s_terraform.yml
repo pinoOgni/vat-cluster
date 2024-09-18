@@ -5,4 +5,3 @@
   become: false
   roles:
    - k8s_terraform
-   

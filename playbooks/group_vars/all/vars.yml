@@ -7,19 +7,19 @@ k8s_version: 1.29
 kubernetes_version: 1.29.0
 
 apt_packages:
-- apt-transport-https
-- ca-certificates
-- curl
-- gpg
-- software-properties-common
-- socat
+  - apt-transport-https
+  - ca-certificates
+  - curl
+  - gpg
+  - software-properties-common
+  - socat
 
 containerd_dependencies:
-- unzip
-- tar
-- apt-transport-https
-- libseccomp2
-- util-linux
+  - unzip
+  - tar
+  - apt-transport-https
+  - libseccomp2
+  - util-linux
 
 containerd_version: 1.7.0
 
